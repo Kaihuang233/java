@@ -1,0 +1,181 @@
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.Socket;
+
+public class kehuduan {
+    public static void main(String[] args){
+        Client c = new Client();
+    }
+}
+class Client {
+    JFrame f;
+    JPanel p1;
+    JPanel p2;
+    JPanel p3;
+    JLabel l1;
+    JLabel l2;
+    JLabel l3;
+    JLabel l4;
+    JTextArea t1;
+    JTextArea t2;
+    JTextArea t3;
+    JTextArea textarea;
+    JButton b1;
+    JButton b2;
+    static Socket socket;
+
+    Client() {
+        f = new JFrame("客户端");
+        f.setSize(500, 520);//设置窗口大小
+        f.setLocation(500, 200);//设置窗口在屏幕的位置
+        f.setLayout(null);//设置窗口布局
+        f.getContentPane().setBackground(new Color(245, 245, 245));//设置窗口背景
+
+        p1 = new JPanel();
+        p1.setBounds(10, 10, 467, 80);//设置面板位置和大小
+        p1.setBackground(new Color(128, 128, 128));
+        p1.setLayout(null);//取消默认布局
+
+        p2 = new JPanel();
+        p2.setBounds(10, 90, 467, 300);
+        p2.setBackground(new Color(176, 196, 222));
+        p2.setLayout(null);
+
+        p3 = new JPanel();
+        p3.setBounds(10, 390, 467, 75);//设置面板位置和大小
+        p3.setBackground(new Color(128, 128, 128));
+        p3.setLayout(null);//取消默认布局
+
+        l1 = new JLabel("客户机设置:");//第一个标签
+        l1.setFont(new Font("微软雅黑", Font.PLAIN, 20));//设置字体
+        l1.setForeground(new Color(30, 10, 10));
+        l1.setBounds(20, 0, 250, 40);
+
+        l2 = new JLabel("Server IP:");//第二个标签
+        l2.setFont(new Font("微软雅黑", Font.PLAIN, 16));//设置字体
+        l2.setForeground(new Color(30, 10, 10));
+        l2.setBounds(5, 40, 150, 30);
+
+        l4 = new JLabel("Server port:");//第二个标签
+        l4.setFont(new Font("微软雅黑", Font.PLAIN, 16));//设置字体
+        l4.setForeground(new Color(30, 10, 10));
+        l4.setBounds(182, 40, 110, 30);
+
+        l3 = new JLabel("Say:");//第三个标签
+        l3.setFont(new Font("微软雅黑", Font.PLAIN, 17));//设置字体
+        l3.setForeground(new Color(30, 10, 10));
+        l3.setBounds(10, 20, 150, 30);
+
+        t1 = new JTextArea();//输入栏左上
+        t1.setLineWrap(true);
+        t1.setBounds(80, 45, 100, 23);
+        t1.setFont(new Font("宋体", Font.BOLD, 18));//设置字体
+
+        t3 = new JTextArea();//输入栏右上
+        t3.setLineWrap(true);
+        t3.setBounds(270, 45, 100, 23);
+        t3.setFont(new Font("宋体", Font.BOLD, 18));//设置字体
+
+        t2 = new JTextArea();//输入栏say
+        t2.setLineWrap(true);
+        t2.setBounds(56, 24, 310, 30);
+        t2.setFont(new Font("宋体", Font.BOLD, 24));//设置字体
+
+        textarea = new JTextArea(20, 30);//聊天文本
+        textarea.setLineWrap(true);
+        textarea.setBounds(3, 8, 460, 280);
+        textarea.setEditable(false);//不可编辑
+        textarea.setFont(new Font("宋体", Font.BOLD, 24));
+
+        b1 = new JButton("Connect");//加按钮
+        b1.setBounds(384, 52, 90, 30);
+        b1.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                connect();
+            }
+        });
+
+        b2 = new JButton("Say");//加按钮
+        b2.setBounds(384, 414, 80, 30);
+        b2.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                say();
+            }
+        });
+
+        p1.add(l1);
+        p1.add(l2);
+        p1.add(l4);
+        p3.add(l3);
+        p1.add(t1);
+        p1.add(t3);
+        p3.add(t2);
+        p2.add(textarea);
+
+        f.add(b1);
+        f.add(b2);
+        f.add(p1);
+        f.add(p2);
+        f.add(p3);
+        f.setVisible(true);
+        f.addWindowListener(new WindowAdapter() {        //为关闭程序添加监听器
+            @Override
+            public void windowClosing(WindowEvent e) {
+                System.exit(1);
+            }
+        });
+    }
+
+    public void say() {//输出给服务器
+        String s = t2.getText();//获得say中的字符
+        textarea.append(s + "\r\n");
+        t2.setText("");
+        try {
+            OutputStream os = socket.getOutputStream();
+            os.write(("客户端：" + s).getBytes());
+        } catch (IOException ie) {
+            System.out.println(ie);
+        }
+    }
+
+    public void connect() {
+        int ports = new Integer(t3.getText());
+        String string = t1.getText();
+        try {
+            socket = new Socket(string, ports);
+            textarea.append("connect to server...\n");     //创建socket后在聊天区域输出connect to server...
+            OutputStream os = socket.getOutputStream();
+            os.write("Client connected......\n".getBytes());   //获取socket输出流并向服务器发送Client connected...
+
+            Runnable r = new Runnable() {        //使用线程使socket保持开启，随时接收serversocket发来的信息
+                @Override
+                public void run() {
+                    while (true) {
+                        try {
+                            InputStream is = socket.getInputStream();
+                            int len = 0;
+                            byte[] bytes = new byte[1024];
+                            while ((len = is.read(bytes)) != -1) {
+                                String string = new String(bytes, 0, len);
+                                textarea.append(string + '\n');
+                            }
+                        } catch (IOException ie) {
+                            System.out.println(ie);
+                        }
+                    }
+                }
+            };
+            Thread thread = new Thread(r);
+            thread.start();
+        } catch (IOException e) {
+            System.out.println(e);
+        }
+    }
+}
